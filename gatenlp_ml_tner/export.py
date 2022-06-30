@@ -19,7 +19,7 @@ def build_argparser():
                            help="Input directory"
                            )
     argparser.add_argument("outdir", type=str,
-                           help="A document where the output files are stored")
+                           help="A directory where the output files are stored")
     argparser.add_argument("--recursive", action="store_true",
                            help="If specified, process all matching documents in the directory tree")
     argparser.add_argument("--exts", nargs="+", default=[".bdocjs"],

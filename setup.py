@@ -41,7 +41,7 @@ setup(
     setup_requires=[
         # deliberately not used, since it installs packages without pip,  use the "dev" extras instead
     ],
-    # install_requires=get_install_extras_require()["base"],
+    install_requires=["iobes"],
     # extras_require=get_install_extras_require(),
     python_requires=">=3.7",
     # tests_require=["pytest", "pytest-cov"],
