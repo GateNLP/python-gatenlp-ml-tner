@@ -3,8 +3,19 @@ Module that defines Annotator classes to apply a trained model to new documents.
 """
 import iobes
 import tner
+from nltk.tokenize.util import align_tokens
+import re
 from gatenlp.processing.annotator import Annotator
 from gatenlp import Span
+
+PAT_WS = re.compile(r"\s+")
+
+def find_idx(offsetspans, off):
+    """Find the offset in the offset spans and return the idx. Exception if not found."""
+    for idx, span in enumerate(offsetspans):
+        if off >= span[0] and off <= span[1]:
+            return idx
+    raise Exception(f"Offset {off} not found in {offsetspans}")
 
 
 class TnerTokenClassificationAnnotator(Annotator):
@@ -40,7 +51,7 @@ class TnerTokenClassificationAnnotator(Annotator):
         self.annset_name = annset_name
         self.outset_name = outset_name
         self.sentence_type = sentence_type
-        self.model = tner.TransformerNER(self.model_dir)
+        self.model = tner.TransformersNER(self.model_dir)
 
     def __call__(self, doc, **kwargs):
         if self.sentence_type is None:
@@ -65,17 +76,22 @@ class TnerTokenClassificationAnnotator(Annotator):
         # Similar for the end offset we get back: each end offset can be mapped back to the in-sentence token
         preds = self.model.predict(txts)
 
-        for span in spans:
-            # TODO: if we have a token type construct txt from the tokens, optionally from the token feature
-            txt = doc[span]
-            # apply model to the text, then get the chunks spans
-            preds = self.model.predict(txt)
-            # adapt span offsets by adding sentence span start offset and add to outset
-            for pred in preds:
-                for ent in pred["entity"]:
-                    start, end = ent["position"]
-                    etype = ent["probability"]
-                    prob = ent["probability"]
-                    outset.add(start+span.start, end+span.end, etype, features=dict(probability=probability))
+        for pred, span in zip(preds, spans):
+            oldtxt = doc[span]
+            newtxt = pred["sentence"]
+            tokens = re.split(PAT_WS, newtxt)
+            oldoffs = align_tokens(tokens, oldtxt)
+            newoffs = align_tokens(tokens, newtxt)
+            for ent in pred["entity"]:
+                start, end = ent["position"]
+                sidx = find_idx(newoffs, start)
+                eidx = find_idx(newoffs, end)
+                sdiff = start - newoffs[sidx][0]
+                start = oldoffs[sidx][0] + sdiff
+                ediff = end = newoffs[eidx][1]
+                end = oldoffs[eidx][1] + ediff
+                etype = ent["type"]
+                prob = ent["probability"]
+                outset.add(start+span.start, end+span.end, etype, features=dict(probability=probability))
         return doc
 
