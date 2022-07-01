@@ -16,8 +16,8 @@ class TokenClassificationTrainer:
     """
     def __init__(
             self,
-            data_dir: Optional[str],
-            output_dir: str = "./tner_tokenclassification_model",
+            datadir: Optional[str],
+            outdir: str = "./tner_tokenclassification_model",
             transformers_model: str = "dslim/bert-base-NER",
             seed: int = 42,
             learning_rate = 2e-5,
@@ -34,16 +34,15 @@ class TokenClassificationTrainer:
             num_worker: int = 0,
             cache_dir: Optional[str] = None,
     ):
-        assert os.path.isdir(data_dir)
-        assert os.path.isdir(output_dir)
+        assert os.path.isdir(datadir)
+        assert os.path.isdir(outdir)
         self.seed = seed
         if eval_size is None:
             eval_size = 1.0 - train_size
         self.eval_size = eval_size
         self.learning_rate = learning_rate
-        self.data_dir = data_dir
-        self.data_file = os.path.join(self.data_dir, "data.conll")
-        self.output_dir = output_dir
+        self.datadir = datadir
+        self.outdir = outdir
         self.max_seq_length = max_seq_length
         self.train_size = train_size
         self.eval_size = eval_size
@@ -57,8 +56,8 @@ class TokenClassificationTrainer:
         self.num_worker = num_worker
         self.cache_dir = cache_dir
         self.trainer = tner.TrainTransformersNER(
-            checkpoint_dir=self.output_dir,
-            dataset=os.path.join(self.data_file),
+            checkpoint_dir=self.outdir,
+            dataset=os.path.join(self.datadir),
             transformers_model=transformers_model,
             random_seed=seed,
             lr=learning_rate,
@@ -89,7 +88,7 @@ def build_argparser():
                            )
     argparser.add_argument("outdir", type=str,
                            help="Directory where the model is being stored. Gets created if it does not exist.")
-    argparser.add_argument("transformers_model", type=str,
+    argparser.add_argument("--transformers_model", type=str, default="dslim/bert-base-NER",
                            help="Name or location of a pretrained transformers model to use (dslim/bert-base-NER)")
     argparser.add_argument("--seed", type=int, default=42,
                            help="Random seed to use (42)")
@@ -107,7 +106,7 @@ def build_argparser():
                            help="Weight decay (1e-7)")
     argparser.add_argument("--batch_size", type=int, default=16,
                            help="Batch size (16)")
-    argparser.add_argument("--max_seq_len", type=int, default=128,
+    argparser.add_argument("--max_seq_length", type=int, default=128,
                            help="Maximum length of model input sequence (transformer tokens plus special codes) (128)")
     argparser.add_argument("--fp16", action="store_true",
                            help="Use FP16")
@@ -130,14 +129,14 @@ def parse_args():
     return args
 
 
-def run_train():
+def run_training():
     args = parse_args()
     if args.debug:
         logger = init_logger(lvl=logging.DEBUG)
     else:
         logger = init_logger()
-
     kwargs = vars(args)
+    del kwargs["debug"]
     trainer = TokenClassificationTrainer(**kwargs)
     logger.info(f"Initialized trainer, running training ... ")
     trainer.train()
@@ -145,4 +144,4 @@ def run_train():
 
 
 if __name__ == "__name__":
-    run_train()
+    run_training()
