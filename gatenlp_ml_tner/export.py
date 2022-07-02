@@ -20,6 +20,8 @@ def build_argparser():
                            )
     argparser.add_argument("outdir", type=str,
                            help="A directory where the output files are stored")
+    argparser.add_argument("--outfile", type=str, default="train.txt",
+                           help="The file name of the conll format file in outdir (train.txt)")
     argparser.add_argument("--recursive", action="store_true",
                            help="If specified, process all matching documents in the directory tree")
     argparser.add_argument("--exts", nargs="+", default=[".bdocjs"],
@@ -34,10 +36,12 @@ def build_argparser():
                            help="Sentence/sequence annotation type (default: None, use whole document)")
     argparser.add_argument("--token_type", type=str, default="Token",
                            help="Token annotation type (Token)")
-    argparser.add_argument("--token_feature", type=str, default="bdocjs",
+    argparser.add_argument("--token_feature", type=str,
                            help="Token feature name to get the string from (None: get from document text)")
     argparser.add_argument("--chunk_types", nargs="*",
                            help="Annotation types of entity/chunk annotations")
+    argparser.add_argument("--chunk_annset_name", type=str,
+                           help="If specified, a different annotation set names for getting the chunk annotations")
     argparser.add_argument("--scheme", type=str, choices=["IOB", "BIO", "IOBES", "BILOU", "BMEOW", "BMEWO"],
                            default="BIO",
                            help="Chunk coding scheme to use (BIO)")
@@ -58,7 +62,7 @@ def run_docs2dataset():
         logger = init_logger(lvl=logging.DEBUG)
     else:
         logger = init_logger()
-    outfile = os.path.join(args.outdir, "data.conll")
+    outfile = os.path.join(args.outdir, args.outfile)
     src = DirFilesSource(dirpath=args.docdir, recursive=args.recursive, exts=args.exts, fmt=args.fmt)
     dest = Conll2003FileDestination(
         file=outfile,
@@ -66,6 +70,7 @@ def run_docs2dataset():
         sentence_type=args.sentence_type,
         token_type=args.token_type,
         token_feature=args.token_feature,
+        chunk_annset_name=args.chunk_annset_name,
         chunk_types=args.chunk_types,
         scheme=args.scheme,
     )
