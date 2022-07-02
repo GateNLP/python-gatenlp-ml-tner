@@ -80,18 +80,27 @@ class TnerTokenClassificationAnnotator(Annotator):
             oldtxt = doc[span]
             newtxt = pred["sentence"]
             tokens = re.split(PAT_WS, newtxt)
+            # print("OLDTXT", oldtxt)
+            # print("NEWTXT", newtxt)
+            # print("TOKENS", tokens)
             oldoffs = align_tokens(tokens, oldtxt)
             newoffs = align_tokens(tokens, newtxt)
+            # print("OLDOFFS", oldoffs)
+            # print("NEWOFFS", newoffs)
             for ent in pred["entity"]:
                 start, end = ent["position"]
+                # print("original start, end", start, end)
                 sidx = find_idx(newoffs, start)
                 eidx = find_idx(newoffs, end)
                 sdiff = start - newoffs[sidx][0]
                 start = oldoffs[sidx][0] + sdiff
-                ediff = end = newoffs[eidx][1]
+                # print("sidx/eidx", sidx, eidx)
+                ediff = end - newoffs[eidx][1]
+                # print("sdiff/ediff", sdiff, ediff)
                 end = oldoffs[eidx][1] + ediff
+                # print("new start, end", start, end)
                 etype = ent["type"]
                 prob = ent["probability"]
-                outset.add(start+span.start, end+span.end, etype, features=dict(probability=probability))
+                outset.add(start+span.start, end+span.start, etype, features=dict(probability=prob))
         return doc
 
